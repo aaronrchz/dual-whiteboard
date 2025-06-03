@@ -7,8 +7,8 @@ import threading
 import queue
 import websockets.exceptions
 import socket
-import http.server
-import socketserver
+from http.server import SimpleHTTPRequestHandler
+from socketserver import ThreadingTCPServer
 import os
 import re
 
@@ -174,8 +174,8 @@ def get_local_ip():
         return "127.0.0.1"
 
 def start_http_server():
-    handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("0.0.0.0", 8000), handler) as httpd:
+    handler = SimpleHTTPRequestHandler
+    with ThreadingTCPServer(("0.0.0.0", 8000), handler) as httpd:
         print(f"Servidor HTTP iniciado en http://{get_local_ip()}:8000")
         httpd.serve_forever()
 
