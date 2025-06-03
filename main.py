@@ -234,10 +234,12 @@ if __name__ == "__main__":
     color_button = tk.Button(controls_frame, text="Cambiar Color", command=change_pen_color)
     clear_button = tk.Button(controls_frame, text="Limpiar Canvas", command=clear_canvas)
     eraser_button = tk.Button(controls_frame, text="Borrador", command=toggle_eraser)
+    close_button = tk.Button(controls_frame, text="Cerrar App", command=root.destroy, bg="red", fg="white")
 
     color_button.pack(side="left", padx=5, pady=5)
     clear_button.pack(side="left", padx=5, pady=5)
     eraser_button.pack(side="left", padx=5, pady=5)
+    close_button.pack(side="right", padx=5, pady=5)
 
     line_width_label = tk.Label(controls_frame, text="Ancho de Linea:")
     line_width_label.pack(side="left", padx=5, pady=5)
