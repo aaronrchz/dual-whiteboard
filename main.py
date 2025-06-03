@@ -10,6 +10,7 @@ import socket
 import http.server
 import socketserver
 import os
+import re
 
 # Variables globales para WebSocket
 ws_server = None
@@ -180,14 +181,20 @@ def start_http_server():
 
 def update_client_html():
     ip = get_local_ip()
-    with open('client.html', 'r') as file:
-        content = file.read()
-    
-    # Reemplazar la línea del WebSocket con la IP actual
-    content = content.replace('ws://raspberry:8765', f'ws://{ip}:8765')
-    
-    with open('client.html', 'w') as file:
-        file.write(content)
+    try:
+        with open('client.html', 'r', encoding='utf-8') as file:
+            content = file.read()
+        
+        # Buscar la línea que contiene el WebSocket y reemplazarla
+        pattern = r"const ws = new WebSocket\('ws://[^']+'\);"
+        new_ws_line = f"const ws = new WebSocket('ws://{ip}:8765');"
+        new_content = re.sub(pattern, new_ws_line, content)
+        
+        with open('client.html', 'w', encoding='utf-8') as file:
+            file.write(new_content)
+        print(f"Archivo client.html actualizado con la IP: {ip}")
+    except Exception as e:
+        print(f"Error al actualizar client.html: {e}")
 
 if __name__ == "__main__":
     # Obtener y mostrar la IP
