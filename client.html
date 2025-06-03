@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Whiteboard Cliente</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: auto;
+        }
+        #drawingCanvas {
+            display: block;
+            background: white;
+            border: 2px solid #333;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transform: scale(0.7);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="drawingCanvas" width="1920" height="1080"></canvas>
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resolución lógica base (igual que el host dinámico)
+        const LOGICAL_WIDTH = 1920;
+        const LOGICAL_HEIGHT = 1080;
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const ws = new WebSocket('ws://192.168.100.173:8765');
+
+        let mensajeInicialMostrado = true;
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'draw') {
+                if (mensajeInicialMostrado) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    mensajeInicialMostrado = false;
+                }
+                ctx.beginPath();
+                ctx.moveTo(data.x1, data.y1);
+                ctx.lineTo(data.x2, data.y2);
+                ctx.strokeStyle = data.color;
+                ctx.lineWidth = data.width;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            } else if (data.type === 'clear') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                mensajeInicialMostrado = true;
+            }
+        };
+
+        // Variables para el dibujo
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        const colorCliente = 'red';
+        const widthCliente = 2;
+
+        // Soporte para mouse
+        canvas.addEventListener('mousedown', function(e) {
+            isDrawing = true;
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+        canvas.addEventListener('mousemove', function(e) {
+            if (isDrawing) {
+                const currentX = e.offsetX;
+                const currentY = e.offsetY;
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.strokeStyle = colorCliente;
+                ctx.lineWidth = widthCliente;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                const data = {
+                    type: 'draw',
+                    x1: lastX,
+                    y1: lastY,
+                    x2: currentX,
+                    y2: currentY,
+                    color: colorCliente,
+                    width: widthCliente
+                };
+                ws.send(JSON.stringify(data));
+                lastX = currentX;
+                lastY = currentY;
+            }
+        });
+        canvas.addEventListener('mouseup', function() {
+            isDrawing = false;
+        });
+        canvas.addEventListener('mouseleave', function() {
+            isDrawing = false;
+        });
+
+        const SCALE = 0.7; // Debe coincidir con el valor de transform: scale en el CSS
+
+        // Soporte para touch (tablets/móviles)
+        let isTouchDrawing = false;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            isTouchDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            lastTouchX = (touch.clientX - rect.left) / SCALE;
+            lastTouchY = (touch.clientY - rect.top) / SCALE;
+        });
+        canvas.addEventListener('touchmove', function(e) {
+            if (!isTouchDrawing) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const currentX = (touch.clientX - rect.left) / SCALE;
+            const currentY = (touch.clientY - rect.top) / SCALE;
+            ctx.beginPath();
+            ctx.moveTo(lastTouchX, lastTouchY);
+            ctx.lineTo(currentX, currentY);
+            ctx.strokeStyle = colorCliente;
+            ctx.lineWidth = widthCliente;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            const data = {
+                type: 'draw',
+                x1: lastTouchX,
+                y1: lastTouchY,
+                x2: currentX,
+                y2: currentY,
+                color: colorCliente,
+                width: widthCliente
+            };
+            ws.send(JSON.stringify(data));
+            lastTouchX = currentX;
+            lastTouchY = currentY;
+        });
+        canvas.addEventListener('touchend', function(e) {
+            isTouchDrawing = false;
+        });
+    </script>
+</body>
+</html> 
