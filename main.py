@@ -6,6 +6,10 @@ import json
 import threading
 import queue
 import websockets.exceptions
+import socket
+import http.server
+import socketserver
+import os
 
 # Variables globales para WebSocket
 ws_server = None
@@ -157,7 +161,46 @@ def toggle_eraser():
         if status_label:
             status_label.config(text="Modo borrador desactivado", fg="black")
 
+def get_local_ip():
+    try:
+        # Crear un socket temporal para obtener la IP local
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+def start_http_server():
+    handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("0.0.0.0", 8000), handler) as httpd:
+        print(f"Servidor HTTP iniciado en http://{get_local_ip()}:8000")
+        httpd.serve_forever()
+
+def update_client_html():
+    ip = get_local_ip()
+    with open('client.html', 'r') as file:
+        content = file.read()
+    
+    # Reemplazar la línea del WebSocket con la IP actual
+    content = content.replace('ws://raspberry:8765', f'ws://{ip}:8765')
+    
+    with open('client.html', 'w') as file:
+        file.write(content)
+
 if __name__ == "__main__":
+    # Obtener y mostrar la IP
+    local_ip = get_local_ip()
+    print(f"IP del servidor: {local_ip}")
+    
+    # Actualizar el archivo client.html con la IP actual
+    update_client_html()
+    
+    # Iniciar servidor HTTP en un hilo separado
+    http_thread = threading.Thread(target=start_http_server, daemon=True)
+    http_thread.start()
+    
     # Iniciar servidor WebSocket en un hilo separado
     websocket_thread = threading.Thread(target=start_websocket_server_thread, daemon=True)
     websocket_thread.start()
@@ -199,6 +242,10 @@ if __name__ == "__main__":
 
     status_label = tk.Label(root, text="Modo borrador desactivado", anchor="w")
     status_label.pack(side="bottom", fill="x")
+
+    # Agregar etiqueta para mostrar la IP
+    ip_label = tk.Label(root, text=f"Servidor corriendo en: {get_local_ip()}", anchor="w", font=("Arial", 10, "bold"))
+    ip_label.pack(side="bottom", fill="x")
 
     # Iniciar el procesamiento de trazos entrantes
     root.after(20, process_incoming_draws)

@@ -28,14 +28,14 @@
     </style>
 </head>
 <body>
-    <canvas id="drawingCanvas" width="1920" height="1080"></canvas>
+    <canvas id="drawingCanvas" width="1240" height="600"></canvas>
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
 
         // Resolución lógica base (igual que el host dinámico)
-        const LOGICAL_WIDTH = 1920;
-        const LOGICAL_HEIGHT = 1080;
+        const LOGICAL_WIDTH = 1240;
+        const LOGICAL_HEIGHT = 600;
 
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
