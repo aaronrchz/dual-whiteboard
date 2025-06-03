@@ -28,6 +28,13 @@
     </style>
 </head>
 <body>
+    <div id="controls" style="margin-bottom: 20px; text-align: center;">
+        <label for="colorPicker">Color:</label>
+        <input type="color" id="colorPicker" value="#ff0000">
+        <label for="widthRange">Grosor:</label>
+        <input type="range" id="widthRange" min="1" max="20" value="2">
+        <button id="eraserBtn">Borrador</button>
+    </div>
     <canvas id="drawingCanvas" width="1240" height="600"></canvas>
     <script>
         const canvas = document.getElementById('drawingCanvas');
@@ -71,8 +78,38 @@
         let isDrawing = false;
         let lastX = 0;
         let lastY = 0;
-        const colorCliente = 'red';
-        const widthCliente = 2;
+        let colorCliente = document.getElementById('colorPicker').value;
+        let widthCliente = parseInt(document.getElementById('widthRange').value);
+        let eraserMode = false;
+        let prevColor = colorCliente;
+        let prevWidth = widthCliente;
+
+        // Controles de color y grosor
+        document.getElementById('colorPicker').addEventListener('input', function(e) {
+            colorCliente = e.target.value;
+            if (!eraserMode) prevColor = colorCliente;
+        });
+        document.getElementById('widthRange').addEventListener('input', function(e) {
+            widthCliente = parseInt(e.target.value);
+            if (!eraserMode) prevWidth = widthCliente;
+        });
+        // Borrador
+        document.getElementById('eraserBtn').addEventListener('click', function() {
+            eraserMode = !eraserMode;
+            if (eraserMode) {
+                prevColor = colorCliente;
+                prevWidth = widthCliente;
+                colorCliente = 'white';
+                widthCliente = 20;
+                this.textContent = 'Borrador (Activo)';
+                this.style.background = 'orange';
+            } else {
+                colorCliente = prevColor;
+                widthCliente = prevWidth;
+                this.textContent = 'Borrador';
+                this.style.background = '';
+            }
+        });
 
         // Soporte para mouse
         canvas.addEventListener('mousedown', function(e) {
@@ -121,21 +158,21 @@
 
         canvas.addEventListener('touchstart', function(e) {
             e.preventDefault();
-            isTouchDrawing = true;
+            isDrawing = true;
             const rect = canvas.getBoundingClientRect();
             const touch = e.touches[0];
-            lastTouchX = (touch.clientX - rect.left) / SCALE;
-            lastTouchY = (touch.clientY - rect.top) / SCALE;
+            lastX = (touch.clientX - rect.left) / SCALE;
+            lastY = (touch.clientY - rect.top) / SCALE;
         });
         canvas.addEventListener('touchmove', function(e) {
-            if (!isTouchDrawing) return;
+            if (!isDrawing) return;
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             const touch = e.touches[0];
             const currentX = (touch.clientX - rect.left) / SCALE;
             const currentY = (touch.clientY - rect.top) / SCALE;
             ctx.beginPath();
-            ctx.moveTo(lastTouchX, lastTouchY);
+            ctx.moveTo(lastX, lastY);
             ctx.lineTo(currentX, currentY);
             ctx.strokeStyle = colorCliente;
             ctx.lineWidth = widthCliente;
@@ -143,19 +180,19 @@
             ctx.stroke();
             const data = {
                 type: 'draw',
-                x1: lastTouchX,
-                y1: lastTouchY,
+                x1: lastX,
+                y1: lastY,
                 x2: currentX,
                 y2: currentY,
                 color: colorCliente,
                 width: widthCliente
             };
             ws.send(JSON.stringify(data));
-            lastTouchX = currentX;
-            lastTouchY = currentY;
+            lastX = currentX;
+            lastY = currentY;
         });
         canvas.addEventListener('touchend', function(e) {
-            isTouchDrawing = false;
+            isDrawing = false;
         });
     </script>
 </body>

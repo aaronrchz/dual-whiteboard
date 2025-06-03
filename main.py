@@ -25,10 +25,13 @@ incoming_draw_queue = queue.Queue()
 
 def draw_from_ws(data):
     # Dibuja en el canvas de Tkinter desde el hilo principal
-    canvas.create_line(
-        data["x1"], data["y1"], data["x2"], data["y2"],
-        fill=data["color"], width=data["width"], capstyle=tk.ROUND, smooth=True
-    )
+    if data.get("type") == "draw":
+        canvas.create_line(
+            data["x1"], data["y1"], data["x2"], data["y2"],
+            fill=data["color"], width=data["width"], capstyle=tk.ROUND, smooth=True
+        )
+    elif data.get("type") == "clear":
+        canvas.delete("all")
 
 def process_incoming_draws():
     while not incoming_draw_queue.empty():
